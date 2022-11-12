@@ -5,12 +5,25 @@ import Main from './Main';
 import Footer from './Footer';
 import PopupWithForm from './PopupWithForm';
 import React from 'react';
-
-// let isEditProfilePopupOpen = false,
-//   isAddPlacePopupOpen = false,
-//   isEditAvatarPopupOpen = false;
+import Api from '../utils/Api';
+import Card from './Card';
+import ImagePopup from './ImagePopup';
 
 function App() {
+  const [selectedCard, setSelectedCard] = React.useState({});
+  const [popupProps, setPopupProps] = React.useState({});
+  const [userInfo, setUserInfo] = React.useState({});
+  const [cards, setCards] = React.useState([]);
+
+  React.useEffect(() => {
+    Promise.all([Api.getUserInfo(), Api.getInitialCards()])
+      .then(([userInfo, cards]) => {
+        setUserInfo(userInfo);
+        setCards(cards);
+      })
+      .catch((err) => console.log(err));
+  }, []);
+
   const isEditAvatarPopupOpen = {
     name: 'changeAvatar',
     title: 'Обновить аватар',
@@ -84,24 +97,28 @@ function App() {
     ),
   };
 
-  const [props, setProps] = React.useState({});
+  function handleCardClick(props) {
+    setSelectedCard({ ...props, isOpen: true });
+  }
 
   function handleEditAvatarClick() {
-    setProps({ ...props, ...isEditAvatarPopupOpen });
+    console.log('клик по аватару');
+    setPopupProps({ ...popupProps, ...isEditAvatarPopupOpen });
   }
 
   function handleEditProfileClick() {
-    setProps({ ...props, ...isEditProfilePopupOpen });
+    setPopupProps({ ...popupProps, ...isEditProfilePopupOpen });
   }
 
   function handleAddPlaceClick() {
-    setProps({ ...props, ...isAddPlacePopupOpen });
+    setPopupProps({ ...popupProps, ...isAddPlacePopupOpen });
   }
 
   function closeAllPopups() {
-    setProps({ ...props, isOpen: false });
+    setPopupProps({});
+    setSelectedCard({});
   }
-  
+
   return (
     <div className="App">
       <div className="App__container">
@@ -110,15 +127,20 @@ function App() {
           onEditAvatar={handleEditAvatarClick}
           onAddPlace={handleAddPlaceClick}
           onEditProfile={handleEditProfileClick}
+          cards={cards.map((card, index) =>
+            Card({ index, ...card, userInfo, handleCardClick })
+          )}
+          {...userInfo}
         />
         <Footer />
         <PopupWithForm
-          name={props.name}
-          title={props.title}
+          name={popupProps.name}
+          title={popupProps.title}
           onClose={closeAllPopups}
-          isOpen={props.isOpen}
-          children={props.children}
+          isOpen={popupProps.isOpen}
+          children={popupProps.children}
         />
+        <ImagePopup {...selectedCard} onClose={closeAllPopups} />
         <template id="card-template">
           <li className="card__item">
             <figure className="cards__item">
