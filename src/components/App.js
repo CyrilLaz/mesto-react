@@ -12,7 +12,7 @@ function App() {
   const [popupProps, setPopupProps] = React.useState({buttonText: 'Сохранить',});
   const [userInfo, setUserInfo] = React.useState({});
   const [cards, setCards] = React.useState([]);
-console.log(popupProps);
+
   React.useEffect(() => {
     Promise.all([Api.getUserInfo(), Api.getInitialCards()])
       .then(([userInfo, cards]) => {
