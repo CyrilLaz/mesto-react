@@ -1,7 +1,6 @@
 function Card(props) {
-    // console.log(props);
     return (
-      <li key={props.index} className="card__item">
+      <li key={props._id} className="card__item">
         <figure className="cards__item">
           <img
             className="cards__picture"

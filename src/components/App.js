@@ -1,5 +1,3 @@
-//import logo from './images/logo.svg';
-//import './App.css';
 import Header from './Header';
 import Main from './Main';
 import Footer from './Footer';
@@ -11,10 +9,10 @@ import ImagePopup from './ImagePopup';
 
 function App() {
   const [selectedCard, setSelectedCard] = React.useState({});
-  const [popupProps, setPopupProps] = React.useState({});
+  const [popupProps, setPopupProps] = React.useState({buttonText: 'Сохранить',});
   const [userInfo, setUserInfo] = React.useState({});
   const [cards, setCards] = React.useState([]);
-
+console.log(popupProps);
   React.useEffect(() => {
     Promise.all([Api.getUserInfo(), Api.getInitialCards()])
       .then(([userInfo, cards]) => {
@@ -115,8 +113,8 @@ function App() {
   }
 
   function closeAllPopups() {
-    setPopupProps({});
-    setSelectedCard({});
+    setPopupProps({...popupProps, isOpen:false});
+    setSelectedCard({...selectedCard, isOpen:false});
   }
 
   return (
@@ -127,35 +125,17 @@ function App() {
           onEditAvatar={handleEditAvatarClick}
           onAddPlace={handleAddPlaceClick}
           onEditProfile={handleEditProfileClick}
-          cards={cards.map((card, index) =>
-            Card({ index, ...card, userInfo, handleCardClick })
+          cards={cards.map((card) =>
+            Card({ ...card, userInfo, handleCardClick })
           )}
           {...userInfo}
         />
         <Footer />
         <PopupWithForm
-          name={popupProps.name}
-          title={popupProps.title}
           onClose={closeAllPopups}
-          isOpen={popupProps.isOpen}
-          children={popupProps.children}
+          {...popupProps}
         />
         <ImagePopup {...selectedCard} onClose={closeAllPopups} />
-        <template id="card-template">
-          <li className="card__item">
-            <figure className="cards__item">
-              <img className="cards__picture" />
-              <button className="cards__button-delete"></button>
-              <figcaption className="cards__capture">
-                <h2 className="cards__title"></h2>
-                <div className="cards__like">
-                  <button className="cards__like-icon"></button>
-                  <span className="cards__like-counter"></span>
-                </div>
-              </figcaption>
-            </figure>
-          </li>
-        </template>
       </div>
     </div>
   );
