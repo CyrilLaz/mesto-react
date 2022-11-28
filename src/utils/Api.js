@@ -24,13 +24,12 @@ class Api {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify({
-        name: values.userName,
-        about: values.userJob,
+        ...values
       }),
     }).then (this._checkResponce())
   }
 
-  addNewCard(name, link) {
+  addNewCard({name, link}) {
     return fetch(`${this.baseUrl}/cards`, {
       method: 'POST',
       headers: this.headers,
@@ -47,14 +46,18 @@ class Api {
     }).then (this._checkResponce())
   }
 
-  addLike(cardId) {
+  changeLikeCardStatus(cardId, condition) {
+   return condition?this._addLike(cardId):this._removeLike(cardId);
+  }
+
+  _addLike(cardId) {
     return fetch(`${this.baseUrl}/cards/${cardId}/likes`, {
       method: 'PUT',
       headers: this.headers,
     }).then (this._checkResponce())
   }
 
-  removeLike(cardId) {
+  _removeLike(cardId) {
     return fetch(`${this.baseUrl}/cards/${cardId}/likes`, {
       method: 'DELETE',
       headers: this.headers,
