@@ -1,11 +1,5 @@
-import React from 'react';
-import { CurrentUserContext } from '../contexts/CurrentUserContext';
 
 function Card(props) {
-  // const currentUser = React.useContext(CurrentUserContext);
-
-  // const isOwn = props.owner._id === currentUser._id;
-  // const isLiked = props.likes.some(i => i._id === currentUser._id);
 
   const cardLikeButtonClassName = `cards__like-icon${
     props.isLiked ? ' cards__like-icon_active' : ''
@@ -24,7 +18,7 @@ function Card(props) {
           alt={`Картинка с названием "${props.name}"`}
           onClick={() => props.handleCardClick(props)}
         />
-        <button className={cardDeleteButtonClassName} onClick={()=>props.handleCardDelete({_id:props._id})}></button>
+        <button className={cardDeleteButtonClassName} onClick={()=>props.handleConfirmationDelete({_id:props._id})}></button>
         <figcaption className="cards__capture">
           <h2 className="cards__title">{props.name}</h2>
           <div className="cards__like">

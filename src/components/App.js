@@ -9,21 +9,30 @@ import { CurrentUserContext } from '../contexts/CurrentUserContext';
 import { EditProfilePopup } from './EditProfilePopup';
 import { EditAvatarPopup } from './EditAvatarPopup';
 import { AddPlacePopup } from './AddPlacePopup';
+import FormValidator from '../utils/FormValidator';
+import { validationConfig } from '../utils/validation-config';
+import { ConfirmDeletionPopup } from './ConfirmationDeletePopup';
 
 function App() {
+
   const [selectedCard, setSelectedCard] = React.useState({});
-  const [popupButton, setPopupButton] = React.useState({
-    buttonText: 'Сохранить',
-  });
-
-  const [
-    { isEditProfilePopupOpen, isEditAvatarPopupOpen, isAddPlacePopupOpen },
-    setPopupOpen,
-  ] = React.useState({});
-
+  const [popupButton, setPopupButton] = React.useState({});
   const [currentUser, setCurrentUser] = React.useState({});
   const [cards, setCards] = React.useState([]);
 
+  const [
+    {
+      isEditProfilePopupOpen,
+      isEditAvatarPopupOpen,
+      isAddPlacePopupOpen,
+      isConfirmDeletionPopupOpen,
+      popupProps,
+      clearInputErrors,
+    },
+    setPopupOpen,
+  ] = React.useState({});
+
+  // получаем информацию для загрузки
   React.useEffect(() => {
     Promise.all([Api.getUserInfo(), Api.getInitialCards()])
       .then(([userInfo, cards]) => {
@@ -31,6 +40,43 @@ function App() {
         setCards(cards);
       })
       .catch((err) => console.log(err));
+  }, []);
+  // активируем валидацию и определяем методы
+  React.useEffect(() => {
+    const validFormProfile = new FormValidator(
+      validationConfig,
+      document.forms.profile
+    );
+    const validFormCard = new FormValidator(
+      validationConfig,
+      document.forms.changeAvatar
+    );
+    const validFormAvatar = new FormValidator(
+      validationConfig,
+      document.forms.addPicture
+    );
+
+    setPopupButton({
+      makeAvatarButtonDisabled: validFormAvatar.makeButtonDisabled,
+      makeProfileButtonDisabled: validFormProfile.makeButtonDisabled,
+      makeCardButtonDisabled: validFormCard.makeButtonDisabled,
+      makeConfirmButtonDisabled: new FormValidator(
+        validationConfig,
+        document.forms.confirmDelete
+      ).makeButtonDisabled,
+    });
+
+    setPopupOpen({
+      clearInputErrors: function () {
+        validFormProfile.clearInputErrors();
+        validFormCard.clearInputErrors();
+        validFormAvatar.clearInputErrors();
+      },
+    });
+
+    validFormProfile.enableValidation();
+    validFormCard.enableValidation();
+    validFormAvatar.enableValidation();
   }, []);
 
   function handleCardClick(props) {
@@ -46,66 +92,78 @@ function App() {
   }
 
   function handleCardDelete(card) {
+    popupButton.makeConfirmButtonDisabled(true);
+    setPopupButton({ ...popupButton, buttonText: 'Сохранение...' });
     Api.removeCard(card._id).then((mes) => {
-      console.log(mes);
+      setPopupButton({ ...popupButton, buttonText: 'Готово' });
+      closeAllPopups();
       setCards((state) => state.filter((c) => c._id !== card._id));
     });
   }
 
   function handleEditAvatarClick() {
-    setPopupOpen({ isEditAvatarPopupOpen: true });
+    popupButton.makeAvatarButtonDisabled(true);
+    setPopupButton({ ...popupButton, buttonText: 'Сохранить' });
+    setPopupOpen({ clearInputErrors, isEditAvatarPopupOpen: true });
   }
 
   function handleEditProfileClick() {
-    setPopupOpen({ isEditProfilePopupOpen: true });
+    popupButton.makeProfileButtonDisabled(true);
+    setPopupButton({ ...popupButton, buttonText: 'Сохранить' });
+    setPopupOpen({ clearInputErrors, isEditProfilePopupOpen: true });
   }
 
   function handleAddPlaceClick() {
-    setPopupOpen({ isAddPlacePopupOpen: true });
+    popupButton.makeCardButtonDisabled(true);
+    setPopupButton({ ...popupButton, buttonText: 'Сохранить' });
+    setPopupOpen({ clearInputErrors, isAddPlacePopupOpen: true });
   }
 
   function closeAllPopups() {
-    setPopupOpen({});
+    setPopupOpen({ clearInputErrors });
     setSelectedCard({ ...selectedCard, isOpen: false });
+
+    clearInputErrors();
   }
 
   function handleUpdateUser(props) {
-    setPopupButton({ buttonText: 'Сохранение...' });
-    Api.changeUserInfo(props)
-      .then((res) => {
-        setPopupButton({ buttonText: 'Готово' });
-        setCurrentUser(res);
-        closeAllPopups();
-      })
-      .finally(() =>
-        setTimeout(() => setPopupButton({ buttonText: 'Сохранить' }), 500)
-      );
+    popupButton.makeProfileButtonDisabled(true);
+    setPopupButton({ ...popupButton, buttonText: 'Сохранение...' });
+    Api.changeUserInfo(props).then((res) => {
+      setPopupButton({ ...popupButton, buttonText: 'Готово' });
+      setCurrentUser(res);
+      closeAllPopups();
+    });
   }
 
   function handleUpdateAvatar(props) {
-    setPopupButton({ buttonText: 'Сохранение...' });
-    Api.changeAvatar(props.avatar)
-      .then((res) => {
-        setPopupButton({ buttonText: 'Готово' });
-        setCurrentUser(res);
-        closeAllPopups();
-      })
-      .finally(() =>
-        setTimeout(() => setPopupButton({ buttonText: 'Сохранить' }), 500)
-      );
+    popupButton.makeAvatarButtonDisabled(true);
+    setPopupButton({ ...popupButton, buttonText: 'Сохранение...' });
+    Api.changeAvatar(props.avatar).then((res) => {
+      setPopupButton({ ...popupButton, buttonText: 'Готово' });
+      setCurrentUser(res);
+      closeAllPopups();
+    });
   }
 
   function handleAddPlace(props) {
-    setPopupButton({ buttonText: 'Сохранение...' });
-    Api.addNewCard(props)
-      .then((newCard) => {
-        setPopupButton({ buttonText: 'Готово' });
-        setCards([newCard, ...cards]);
-        closeAllPopups();
-      })
-      .finally(() =>
-        setTimeout(() => setPopupButton({ buttonText: 'Сохранить' }), 500)
-      );
+    popupButton.makeCardButtonDisabled(true);
+    setPopupButton({ ...popupButton, buttonText: 'Сохранение...' });
+    Api.addNewCard(props).then((newCard) => {
+      setPopupButton({ ...popupButton, buttonText: 'Готово' });
+      setCards([newCard, ...cards]);
+      closeAllPopups();
+    });
+  }
+
+  function handleConfirmationDelete(props) {
+    popupButton.makeConfirmButtonDisabled(false);
+    setPopupButton({ ...popupButton, buttonText: 'Да' });
+    setPopupOpen({
+      clearInputErrors,
+      isConfirmDeletionPopupOpen: true,
+      popupProps: props,
+    });
   }
 
   return (
@@ -124,7 +182,7 @@ function App() {
                 isLiked: card.likes.some((i) => i._id === currentUser._id),
                 handleCardClick,
                 handleCardLike,
-                handleCardDelete,
+                handleConfirmationDelete,
               });
             })}
           />
@@ -147,6 +205,13 @@ function App() {
             onClose={closeAllPopups}
             {...popupButton}
             onAddPlace={handleAddPlace}
+          />
+          <ConfirmDeletionPopup
+            {...popupProps}
+            isOpen={isConfirmDeletionPopupOpen}
+            onClose={closeAllPopups}
+            {...popupButton}
+            onConfirmDeletion={handleCardDelete}
           />
         </CurrentUserContext.Provider>
       </div>
