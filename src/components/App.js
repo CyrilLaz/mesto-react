@@ -3,22 +3,27 @@ import Main from './Main';
 import Footer from './Footer';
 import ImagePopup from './ImagePopup';
 import Card from './Card';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Api from '../utils/Api';
 import { CurrentUserContext } from '../contexts/CurrentUserContext';
 import { EditProfilePopup } from './EditProfilePopup';
 import { EditAvatarPopup } from './EditAvatarPopup';
 import { AddPlacePopup } from './AddPlacePopup';
-import FormValidator from '../utils/FormValidator';
-import { validationConfig } from '../utils/validation-config';
+import { useFormValidator } from './useFormValidator';
 import { ConfirmDeletionPopup } from './ConfirmationDeletePopup';
 
 function App() {
-
-  const [selectedCard, setSelectedCard] = React.useState({});
-  const [popupButton, setPopupButton] = React.useState({});
-  const [currentUser, setCurrentUser] = React.useState({});
-  const [cards, setCards] = React.useState([]);
+  const [selectedCard, setSelectedCard] = useState({});
+  const [buttonText, setButtonText] = useState('');
+  const [currentUser, setCurrentUser] = useState({});
+  const [cards, setCards] = useState([]);
+  const [
+    handleValidForm,
+    errors,
+    isButtonDisabled,
+    resetForm,
+    toggleButtonDisabling,
+  ] = useFormValidator();
 
   const [
     {
@@ -27,56 +32,18 @@ function App() {
       isAddPlacePopupOpen,
       isConfirmDeletionPopupOpen,
       popupProps,
-      clearInputErrors,
     },
     setPopupOpen,
-  ] = React.useState({});
+  ] = useState({});
 
   // получаем информацию для загрузки
-  React.useEffect(() => {
+  useEffect(() => {
     Promise.all([Api.getUserInfo(), Api.getInitialCards()])
       .then(([userInfo, cards]) => {
         setCurrentUser(userInfo);
         setCards(cards);
       })
       .catch((err) => console.log(err));
-  }, []);
-  // активируем валидацию и определяем методы
-  React.useEffect(() => {
-    const validFormProfile = new FormValidator(
-      validationConfig,
-      document.forms.profile
-    );
-    const validFormCard = new FormValidator(
-      validationConfig,
-      document.forms.changeAvatar
-    );
-    const validFormAvatar = new FormValidator(
-      validationConfig,
-      document.forms.addPicture
-    );
-
-    setPopupButton({
-      makeAvatarButtonDisabled: validFormAvatar.makeButtonDisabled,
-      makeProfileButtonDisabled: validFormProfile.makeButtonDisabled,
-      makeCardButtonDisabled: validFormCard.makeButtonDisabled,
-      makeConfirmButtonDisabled: new FormValidator(
-        validationConfig,
-        document.forms.confirmDelete
-      ).makeButtonDisabled,
-    });
-
-    setPopupOpen({
-      clearInputErrors: function () {
-        validFormProfile.clearInputErrors();
-        validFormCard.clearInputErrors();
-        validFormAvatar.clearInputErrors();
-      },
-    });
-
-    validFormProfile.enableValidation();
-    validFormCard.enableValidation();
-    validFormAvatar.enableValidation();
   }, []);
 
   function handleCardClick(props) {
@@ -87,80 +54,84 @@ function App() {
     const isLiked = card.likes.some((i) => i._id === currentUser._id);
 
     Api.changeLikeCardStatus(card._id, !isLiked).then((newCard) => {
-      setCards((state) => state.map((c) => (c._id === card._id ? newCard : c)));
+      setCards((state) =>
+        state.map((c) => (c._id === card._id ? newCard : c))
+      ).catch((err) => console.log(err));
     });
   }
 
   function handleCardDelete(card) {
-    popupButton.makeConfirmButtonDisabled(true);
-    setPopupButton({ ...popupButton, buttonText: 'Сохранение...' });
+    toggleButtonDisabling(true);
+    setButtonText('Сохранение...');
     Api.removeCard(card._id).then((mes) => {
-      setPopupButton({ ...popupButton, buttonText: 'Готово' });
       closeAllPopups();
-      setCards((state) => state.filter((c) => c._id !== card._id));
+      setCards((state) => state.filter((c) => c._id !== card._id)).catch(
+        (err) => console.log(err)
+      );
     });
   }
 
   function handleEditAvatarClick() {
-    popupButton.makeAvatarButtonDisabled(true);
-    setPopupButton({ ...popupButton, buttonText: 'Сохранить' });
-    setPopupOpen({ clearInputErrors, isEditAvatarPopupOpen: true });
+    setButtonText('Сохранить');
+    setPopupOpen({ isEditAvatarPopupOpen: true });
   }
 
   function handleEditProfileClick() {
-    popupButton.makeProfileButtonDisabled(true);
-    setPopupButton({ ...popupButton, buttonText: 'Сохранить' });
-    setPopupOpen({ clearInputErrors, isEditProfilePopupOpen: true });
+    setButtonText('Сохранить');
+    setPopupOpen({ isEditProfilePopupOpen: true });
   }
 
   function handleAddPlaceClick() {
-    popupButton.makeCardButtonDisabled(true);
-    setPopupButton({ ...popupButton, buttonText: 'Сохранить' });
-    setPopupOpen({ clearInputErrors, isAddPlacePopupOpen: true });
+    setButtonText('Сохранить');
+    setPopupOpen({ isAddPlacePopupOpen: true });
   }
 
   function closeAllPopups() {
-    setPopupOpen({ clearInputErrors });
+    setPopupOpen({});
+    resetForm();
     setSelectedCard({ ...selectedCard, isOpen: false });
-
-    clearInputErrors();
   }
 
   function handleUpdateUser(props) {
-    popupButton.makeProfileButtonDisabled(true);
-    setPopupButton({ ...popupButton, buttonText: 'Сохранение...' });
-    Api.changeUserInfo(props).then((res) => {
-      setPopupButton({ ...popupButton, buttonText: 'Готово' });
-      setCurrentUser(res);
-      closeAllPopups();
-    });
+    toggleButtonDisabling(true);
+    setButtonText('Сохранение...');
+    Api.changeUserInfo(props)
+      .then((res) => {
+        setButtonText('Готово');
+        setCurrentUser(res);
+        closeAllPopups();
+      })
+      .catch((err) => console.log(err));
   }
 
   function handleUpdateAvatar(props) {
-    popupButton.makeAvatarButtonDisabled(true);
-    setPopupButton({ ...popupButton, buttonText: 'Сохранение...' });
-    Api.changeAvatar(props.avatar).then((res) => {
-      setPopupButton({ ...popupButton, buttonText: 'Готово' });
-      setCurrentUser(res);
-      closeAllPopups();
-    });
+    toggleButtonDisabling(true);
+    setButtonText('Сохранение...');
+    Api.changeAvatar(props.avatar)
+      .then((res) => {
+        setButtonText('Готово');
+        setCurrentUser(res);
+        closeAllPopups();
+      })
+      .catch((err) => console.log(err));
   }
 
   function handleAddPlace(props) {
-    popupButton.makeCardButtonDisabled(true);
-    setPopupButton({ ...popupButton, buttonText: 'Сохранение...' });
-    Api.addNewCard(props).then((newCard) => {
-      setPopupButton({ ...popupButton, buttonText: 'Готово' });
-      setCards([newCard, ...cards]);
-      closeAllPopups();
-    });
+    toggleButtonDisabling(true);
+    setButtonText('Сохранение...');
+    Api.addNewCard(props)
+      .then((newCard) => {
+        setButtonText('Готово');
+        setCards([newCard, ...cards]);
+        closeAllPopups();
+      })
+      .catch((err) => console.log(err));
   }
 
   function handleConfirmationDelete(props) {
-    popupButton.makeConfirmButtonDisabled(false);
-    setPopupButton({ ...popupButton, buttonText: 'Да' });
+    toggleButtonDisabling(false);
+    setButtonText('Да');
     setPopupOpen({
-      clearInputErrors,
       isConfirmDeletionPopupOpen: true,
       popupProps: props,
     });
@@ -191,27 +162,37 @@ function App() {
           <EditProfilePopup
             isOpen={isEditProfilePopupOpen}
             onClose={closeAllPopups}
-            {...popupButton}
+            buttonText={buttonText}
             onUpdateUser={handleUpdateUser}
+            handleValidForm={handleValidForm}
+            errors={errors}
+            isButtonDisabled={isButtonDisabled}
           />
           <EditAvatarPopup
             isOpen={isEditAvatarPopupOpen}
             onClose={closeAllPopups}
-            {...popupButton}
+            buttonText={buttonText}
             onUpdateAvatar={handleUpdateAvatar}
+            handleValidForm={handleValidForm}
+            errors={errors}
+            isButtonDisabled={isButtonDisabled}
           />
           <AddPlacePopup
             isOpen={isAddPlacePopupOpen}
             onClose={closeAllPopups}
-            {...popupButton}
+            buttonText={buttonText}
             onAddPlace={handleAddPlace}
+            handleValidForm={handleValidForm}
+            errors={errors}
+            isButtonDisabled={isButtonDisabled}
           />
           <ConfirmDeletionPopup
             {...popupProps}
             isOpen={isConfirmDeletionPopupOpen}
             onClose={closeAllPopups}
-            {...popupButton}
+            buttonText={buttonText}
             onConfirmDeletion={handleCardDelete}
+            isButtonDisabled={isButtonDisabled}
           />
         </CurrentUserContext.Provider>
       </div>

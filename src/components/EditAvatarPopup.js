@@ -1,32 +1,13 @@
-import React from 'react';
+import React,{useRef,useEffect} from 'react';
 import PopupWithForm from './PopupWithForm';
 
 export function EditAvatarPopup(props) {
-  const input = React.useRef();
-  const popupProps = {
-    name: 'changeAvatar',
-    title: 'Обновить аватар',
-    isOpen: props.isOpen,
-    children: (
-      <>
-        <input
-          ref={input}
-          defaultValue=""
-          name="avatarUrl"
-          type="url"
-          placeholder="Ссылкак на фотографию профиля"
-          className="form__input form__input_type_url"
-          required
-        />
-        <span className="form__input-error avatarUrl-error"></span>
-      </>
-    ),
-  };
+  const input = useRef();
 
-  React.useEffect(() => {
+  useEffect(() => {
     input.current.value = '';
   }, [props.isOpen]);
-  
+
   function handleSubmit(e) {
     e.preventDefault();
 
@@ -36,5 +17,30 @@ export function EditAvatarPopup(props) {
     e.target.reset();
   }
 
-  return <PopupWithForm {...popupProps} {...props} onSubmit={handleSubmit} />;
+  return (
+    <PopupWithForm
+      name="changeAvatar"
+      title="Обновить аватар"
+      isOpen={props.isOpen}
+      {...props}
+      onSubmit={handleSubmit}
+      children={
+        <>
+          <input
+            ref={input}
+            defaultValue=""
+            onChange={(e)=>props.handleValidForm(e)}
+            name="avatarUrl"
+            type="url"
+            placeholder="Ссылкак на фотографию профиля"
+            className="form__input form__input_type_url"
+            required
+          />
+          <span className="form__input-error avatarUrl-error">
+            {props.errors.avatarUrl || ''}
+          </span>
+        </>
+      }
+    />
+  );
 }

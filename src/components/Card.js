@@ -1,4 +1,3 @@
-
 function Card(props) {
 
   const cardLikeButtonClassName = `cards__like-icon${

@@ -1,5 +1,6 @@
 function PopupWithForm(props) {
-  // console.log(props);
+
+  
   return (
     <div className={`popup popup-${props.name}${props.isOpen?' popup_opened':''}`}>
       <div className="popup__container">
@@ -8,7 +9,7 @@ function PopupWithForm(props) {
           <fieldset className="form__input-container">
             {props.children}
           </fieldset>
-          <button type="submit" className="form__button">
+          <button type="submit" className={`form__button${props.isButtonDisabled?' form__button_disabled':''}`}>
             {props.buttonText}
           </button>
         </form>
