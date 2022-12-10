@@ -53,22 +53,24 @@ function App() {
   function handleCardLike(card) {
     const isLiked = card.likes.some((i) => i._id === currentUser._id);
 
-    Api.changeLikeCardStatus(card._id, !isLiked).then((newCard) => {
-      setCards((state) =>
-        state.map((c) => (c._id === card._id ? newCard : c))
-      ).catch((err) => console.log(err));
-    });
+    Api.changeLikeCardStatus(card._id, !isLiked)
+      .then((newCard) => {
+        setCards((state) =>
+          state.map((c) => (c._id === card._id ? newCard : c))
+        );
+      })
+      .catch(console.log);
   }
 
   function handleCardDelete(card) {
     toggleButtonDisabling(true);
     setButtonText('Сохранение...');
-    Api.removeCard(card._id).then((mes) => {
-      closeAllPopups();
-      setCards((state) => state.filter((c) => c._id !== card._id)).catch(
-        (err) => console.log(err)
-      );
-    });
+    Api.removeCard(card._id)
+      .then((mes) => {
+        closeAllPopups();
+        setCards((state) => state.filter((c) => c._id !== card._id));
+      })
+      .catch(console.log);
   }
 
   function handleEditAvatarClick() {
